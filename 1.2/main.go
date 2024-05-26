@@ -10,7 +10,6 @@ func main() {
 		switch os.Args[1] {
 		case "read":
 			{
-
 				if bytes, err := os.ReadFile(os.Args[2]); err != nil {
 					fmt.Printf("could not be read %s: %s\n", os.Args[2], err)
 				} else {
