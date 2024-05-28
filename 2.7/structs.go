@@ -81,7 +81,7 @@ func (cs ContolSection) FindTopStudent() []Result {
 		})
 		if sum := Reduce(stud, 0, func(a Result, b int) int {
 			return a.Result + b
-		}); sum == 15 {
+		}); sum == len(cs.Objects)*5 {
 			return true
 		}
 		return false
