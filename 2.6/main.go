@@ -22,5 +22,6 @@ func main() {
 		log.Fatal(err)
 	}
 	json.Unmarshal(byteValue, &CS)
-	CS.PrintMeanObjects()
+	CS.PrintMeanObjectsByFunctions()
+	//CS.PrintMeanObjects()
 }

@@ -16,7 +16,7 @@ func main() {
 	defer jsonFile.Close()
 	fmt.Println("File descriptor successfully created")
 
-	var CS ContolSection
+	var CS ControlSection
 	byteValue, err := io.ReadAll(jsonFile)
 	if err != nil {
 		log.Fatal(err)

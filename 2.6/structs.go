@@ -53,7 +53,24 @@ func (cs ControlSection) GetObjectNameByID(id int) string {
 	return ""
 }
 
-//Форматированный вывод =) ...надо попробовать повторить c template
+// Метод возвращающий мапу средних значений результатов для каждого грэйда по id предмета
+func (cs ControlSection) GetObjectGradeMeanById(objId int) map[int]float32 {
+	type MeanGrade struct{ sum, count int }
+	gradeMap := make(map[int]MeanGrade)
+	for _, res := range cs.Results {
+		if res.ObjectID == objId {
+			grade := cs.GetStudentGradeByID(res.StudentID)
+			gradeMap[grade] = MeanGrade{gradeMap[grade].sum + res.Result, gradeMap[grade].count + 1}
+		}
+	}
+	resMap := make(map[int]float32, len(gradeMap))
+	for k, v := range gradeMap {
+		resMap[k] = float32(v.sum) / float32(v.count)
+	}
+	return resMap
+}
+
+// Форматированный вывод =) ...надо попробовать повторить c template
 func (cs ControlSection) PrintControlSection() {
 	fmt.Println("___________________________________________________")
 	fmt.Printf("Student name \t| Grade\t| Object\t| Resulte |\n")

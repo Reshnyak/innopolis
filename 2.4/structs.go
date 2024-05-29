@@ -20,14 +20,14 @@ type Result struct {
 	StudentID int `json:"student_id"`
 	Result    int `json:"result"`
 }
-type ContolSection struct {
+type ControlSection struct {
 	Students []Student
 	Objects  []Object
 	Results  []Result
 }
 
 // Метод возвращающий имя студента по его id
-func (cs ContolSection) GetStudentNameByID(id int) string {
+func (cs ControlSection) GetStudentNameByID(id int) string {
 	for _, s := range cs.Students {
 		if s.ID == id {
 			return s.Name
@@ -37,7 +37,7 @@ func (cs ContolSection) GetStudentNameByID(id int) string {
 }
 
 // Метод возвращающий grade студента по его id
-func (cs ContolSection) GetStudentGradeByID(id int) int {
+func (cs ControlSection) GetStudentGradeByID(id int) int {
 	for _, s := range cs.Students {
 		if s.ID == id {
 			return s.Grade
@@ -47,7 +47,7 @@ func (cs ContolSection) GetStudentGradeByID(id int) int {
 }
 
 // Метод возвращающий наименование предмета по id
-func (cs ContolSection) GetObjectNameByID(id int) string {
+func (cs ControlSection) GetObjectNameByID(id int) string {
 	for _, obj := range cs.Objects {
 		if obj.ID == id {
 			return obj.Name
@@ -57,7 +57,7 @@ func (cs ContolSection) GetObjectNameByID(id int) string {
 }
 
 // Метод возвращающий мапу средних значений результатов для каждого грэйда по id предмета
-func (cs ContolSection) GetObjectGradeMeanById(objId int) map[int]float32 {
+func (cs ControlSection) GetObjectGradeMeanById(objId int) map[int]float32 {
 	type MeanGrade struct{ sum, count int }
 	gradeMap := make(map[int]MeanGrade)
 	for _, res := range cs.Results {
@@ -74,7 +74,7 @@ func (cs ContolSection) GetObjectGradeMeanById(objId int) map[int]float32 {
 }
 
 // Форматированный вывод =) ...надо попробовать повторить c template
-func (cs ContolSection) PrintControlSection() {
+func (cs ControlSection) PrintControlSection() {
 	fmt.Println("___________________________________________________")
 	fmt.Printf("Student name \t| Grade\t| Object\t| Resulte |\n")
 	fmt.Println("___________________________________________________")
@@ -93,9 +93,10 @@ func (cs ContolSection) PrintControlSection() {
 }
 
 // Форматированный вывод сводных данных по предметам
-func (cs ContolSection) PrintMeanObjects() {
-	var total float32
+func (cs ControlSection) PrintMeanObjects() {
+
 	for _, obj := range cs.Objects {
+		var total float32
 		fmt.Println("_________________________")
 		if len(obj.Name) < 8 {
 			fmt.Printf("%s\t \t | Mean\t|\n", obj.Name)
