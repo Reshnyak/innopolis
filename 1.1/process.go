@@ -65,11 +65,12 @@ func processLines(lines [][]string, isRand bool) int64 {
 		var userAnswer string
 		fmt.Scanln(&userAnswer)
 		userAnswer = strings.TrimSpace(userAnswer)
-		userAnswer = strings.ToLower(answer) //все в нижний
-		if answer == userAnswer {            // вообще как вариант можно strings.EqualFold и не переводить всех в нижний
+		userAnswer = strings.ToLower(userAnswer) //все в нижний
+		if answer == userAnswer {                // вообще как вариант можно strings.EqualFold и не переводить всех в нижний
 			correctAnswers++
 		}
 	}
+
 	return correctAnswers
 }
 
