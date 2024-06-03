@@ -70,7 +70,7 @@ func processLines(lines [][]string, isRand bool) int64 {
 			correctAnswers++
 		}
 	}
-	fmt.Println("--- ", correctAnswers, " ---")
+
 	return correctAnswers
 }
 
