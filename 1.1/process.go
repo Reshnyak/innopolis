@@ -3,18 +3,18 @@ package main
 import (
 	"encoding/csv"
 	"fmt"
-	"log"
+	"io"
 	"math/rand"
 	"os"
 	"strings"
 )
 
 // Работа с CSV файлом. Открытие и чтение пачками на тот случай, если файл большого размера
-func ProcessCSV(filename string, isRand bool, partSize int) (int64, int64) {
+func ProcessCSV(filename string, isRand bool, partSize int) (int64, int64, error) {
 	var totalQuestions, correctAnswers int64
 	file, err := os.Open(filename)
 	if err != nil {
-		log.Fatal(err)
+		return 0, 0, fmt.Errorf("could not open file:%s - %s", filename, err.Error())
 	}
 	defer file.Close()
 
@@ -26,6 +26,9 @@ func ProcessCSV(filename string, isRand bool, partSize int) (int64, int64) {
 		// Читаем файл построчно
 		line, err := reader.Read()
 		if err != nil {
+			if err != io.EOF {
+				return 0, 0, fmt.Errorf("could not read file:%s - %s", filename, err.Error())
+			}
 			break
 		}
 		lines = append(lines, line)
@@ -36,17 +39,16 @@ func ProcessCSV(filename string, isRand bool, partSize int) (int64, int64) {
 			totalQuestions += int64(len(lines))
 			correctAnswers += processLines(lines, isRand)
 
-			lines = nil
+			lines = lines[:0]
 		}
 	}
-
 	// Обработка оставшихся строк
 	if len(lines) > 0 {
 		totalQuestions += int64(len(lines))
 		correctAnswers += processLines(lines, isRand)
 	}
 
-	return totalQuestions, correctAnswers
+	return totalQuestions, correctAnswers, nil
 }
 func processLines(lines [][]string, isRand bool) int64 {
 	var correctAnswers int64

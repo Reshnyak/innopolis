@@ -1,16 +1,15 @@
 package main
 
-import (
-	"golang.org/x/exp/constraints"
-)
-
+// type Number interface {
+// 	constraints.Integer | constraints.Float
+// }
 type Number interface {
-	constraints.Integer | constraints.Float
+	~int | ~int8 | ~int16 | ~int32 | ~int64 | ~uint | ~uint8 | ~uint16 | ~uint32 | ~uint64 | ~float32 | ~float64
 }
 type Numbers[T Number] []T
 
 // суммирование всех элементов
-func (num Numbers[T]) accumulate() T {
+func (num Numbers[T]) Accumulate() T {
 	var res T
 	for _, val := range num {
 		res += val
@@ -19,7 +18,7 @@ func (num Numbers[T]) accumulate() T {
 }
 
 // произведение всех элементов
-func (num Numbers[T]) product() T {
+func (num Numbers[T]) Product() T {
 	var res T
 	if len(num) > 0 {
 		res = num[0]
