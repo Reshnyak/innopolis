@@ -56,7 +56,7 @@ func (cs ControlSection) GetObjectsMap() map[int]Object {
 	return res
 }
 
-// Метод возвращающий мапу с суммой результатов по предметам и грэйдам
+// Метод возвращающий мапу структур MeanGrade результатов по предметам и грэйдам
 // Ключи первого уровня ObjectID,  второго грэйды
 func (cs ControlSection) GetObjectGradesSum() map[int]map[int]MeanGrade {
 	resMap := make(map[int]map[int]MeanGrade)

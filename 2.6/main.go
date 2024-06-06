@@ -23,5 +23,5 @@ func main() {
 	}
 	json.Unmarshal(byteValue, &CS)
 	CS.PrintMeanObjectsByFunctions()
-	//CS.PrintMeanObjects()
+
 }
