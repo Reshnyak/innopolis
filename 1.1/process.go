@@ -16,7 +16,7 @@ func ProcessCSV(filename string, isRand bool, partSize int) (int64, int64, error
 	if err != nil {
 		return 0, 0, fmt.Errorf("could not open file:%s - %s", filename, err.Error())
 	}
-	defer file.Close()
+	// defer file.Close()
 
 	reader := csv.NewReader(file)
 
@@ -48,7 +48,7 @@ func ProcessCSV(filename string, isRand bool, partSize int) (int64, int64, error
 		correctAnswers += processLines(lines, isRand)
 	}
 
-	return totalQuestions, correctAnswers, nil
+	return totalQuestions, correctAnswers, file.Close()
 }
 func processLines(lines [][]string, isRand bool) int64 {
 	var correctAnswers int64
