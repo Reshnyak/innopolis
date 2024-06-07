@@ -5,38 +5,37 @@ import (
 	"sync"
 )
 
-func mergeChans[T any](in1, in2 <-chan T, out chan T) <-chan struct{} {
-	done := make(chan struct{})
-	defer close(done)
-	wg := new(sync.WaitGroup)
-	wg.Add(2)
+// Принимает на вход каналы и соединяет их содержимое в один
+func mergeChans[T any](inChans ...<-chan T) <-chan T {
+	out := make(chan T)
 	go func() {
-		defer wg.Done()
-		for valIn := range in1 {
-			out <- valIn
+		wg := new(sync.WaitGroup)
+		wg.Add(len(inChans))
+		for _, ch := range inChans {
+			go func(c <-chan T) {
+				defer wg.Done()
+				for valIn := range c {
+					out <- valIn
+				}
+			}(ch)
 		}
+		wg.Wait()
+		close(out)
 	}()
-	go func() {
-		defer wg.Done()
-		for valIn := range in2 {
-			out <- valIn
-		}
-	}()
-	wg.Wait()
-	close(out)
-	return done
+	return out
 }
+
 func main() {
+
 	nums1 := []int{1, 2, 3}
 	nums2 := []int{4, 5, 6}
 	results := make([]int, 0, len(nums1)+len(nums2))
-	resChan := make(chan int)
 
 	chan1 := sendAnyInChan(nums1...)
 	chan2 := sendAnyInChan(nums2...)
+	resChan := mergeChans(chan1, chan2)
 
 	recv := recvAnyInChan(resChan, &results)
-	<-mergeChans(chan1, chan2, resChan)
 
 	<-recv
 	fmt.Printf("Merge results:%v", results)
@@ -58,7 +57,7 @@ func sendAnyInChan[T any](args ...T) <-chan T {
 }
 
 // Вторая вспомогательная возможно опасная функция для приема из канала
-func recvAnyInChan[T any](in chan T, results *[]T) <-chan struct{} {
+func recvAnyInChan[T any](in <-chan T, results *[]T) <-chan struct{} {
 	done := make(chan struct{})
 	go func() {
 		defer close(done)
