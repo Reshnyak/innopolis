@@ -34,6 +34,7 @@ func RunWriter() <-chan map[string]float64 {
 			sendMap := make(map[string]float64, len(currentPrice))
 			for key, value := range currentPrice {
 				currentPrice[key] = value + 1
+				//для отправки по каналу
 				sendMap[key] = currentPrice[key]
 			}
 			prices <- sendMap
