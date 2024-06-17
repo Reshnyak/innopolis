@@ -26,77 +26,69 @@ type ControlSection struct {
 	Results  []Result
 }
 
-// Метод возвращающий имя студента по его id
-func (cs ControlSection) GetStudentNameByID(id int) string {
-	for _, s := range cs.Students {
-		if s.ID == id {
-			return s.Name
-		}
-	}
-	return ""
+type MeanGrade struct {
+	Sum   int
+	Count int
+	Mean  float32
 }
 
-// Метод возвращающий grade студента по его id
-func (cs ControlSection) GetStudentGradeByID(id int) int {
-	for _, s := range cs.Students {
-		if s.ID == id {
-			return s.Grade
-		}
+func (mg *MeanGrade) CalcMean() {
+	if mg.Count > 0 {
+		mg.Mean = float32(mg.Sum) / float32(mg.Count)
 	}
-	return 0
 }
 
-// Метод возвращающий наименование предмета по id
-func (cs ControlSection) GetObjectNameByID(id int) string {
+// Метод возвращающий мапу студентов с ID - key
+func (cs ControlSection) GetStudentsMap() map[int]Student {
+	res := make(map[int]Student)
+	for _, stud := range cs.Students {
+		res[stud.ID] = stud
+	}
+	return res
+}
+
+// Метод возвращающий мапу предметов с ID - key
+func (cs ControlSection) GetObjectsMap() map[int]Object {
+	res := make(map[int]Object)
 	for _, obj := range cs.Objects {
-		if obj.ID == id {
-			return obj.Name
-		}
+		res[obj.ID] = obj
 	}
-	return ""
+	return res
 }
 
-// Метод возвращающий мапу средних значений результатов для каждого грэйда по id предмета
-func (cs ControlSection) GetObjectGradeMeanById(objId int) map[int]float32 {
-	type MeanGrade struct{ sum, count int }
-	gradeMap := make(map[int]MeanGrade)
+// Метод возвращающий мапу структур MeanGrade результатов по предметам и грэйдам
+// Ключи первого уровня ObjectID,  второго грэйды
+func (cs ControlSection) GetObjectGradesSum() map[int]map[int]MeanGrade {
+	resMap := make(map[int]map[int]MeanGrade)
+	for _, obj := range cs.Objects {
+		resMap[obj.ID] = make(map[int]MeanGrade)
+	}
+	studMap := cs.GetStudentsMap()
 	for _, res := range cs.Results {
-		if res.ObjectID == objId {
-			grade := cs.GetStudentGradeByID(res.StudentID)
-			gradeMap[grade] = MeanGrade{gradeMap[grade].sum + res.Result, gradeMap[grade].count + 1}
+		obj := res.ObjectID
+		grade := studMap[res.StudentID].Grade
+		//Исправлено - не в одну строку, если в одну то 0 обязателен.
+		resMap[obj][grade] = MeanGrade{
+			Sum:   resMap[obj][grade].Sum + res.Result,
+			Count: resMap[obj][grade].Count + 1,
 		}
 	}
-	resMap := make(map[int]float32, len(gradeMap))
-	for k, v := range gradeMap {
-		resMap[k] = float32(v.sum) / float32(v.count)
+	for objKey, gradeMap := range resMap {
+		for gradeKey, mg := range gradeMap {
+			mg.CalcMean()
+			resMap[objKey][gradeKey] = mg
+		}
 	}
 	return resMap
 }
 
-// Форматированный вывод =) ...надо попробовать повторить c template
-func (cs ControlSection) PrintControlSection() {
-	fmt.Println("___________________________________________________")
-	fmt.Printf("Student name \t| Grade\t| Object\t| Resulte |\n")
-	fmt.Println("___________________________________________________")
-	for _, r := range cs.Results {
-		fmt.Printf("%s \t\t| ", cs.GetStudentNameByID(r.StudentID))
-		fmt.Printf(" %d\t| ", cs.GetStudentGradeByID(r.StudentID))
-		objName := cs.GetObjectNameByID(r.ObjectID)
-		if len(objName) < 5 {
-			fmt.Printf(" %s\t\t| ", cs.GetObjectNameByID(r.ObjectID))
-		} else {
-			fmt.Printf(" %s\t| ", cs.GetObjectNameByID(r.ObjectID))
-		}
-		fmt.Printf(" %d\t  |\n", r.Result)
-	}
-
-}
-
 // Форматированный вывод сводных данных по предметам
 func (cs ControlSection) PrintMeanObjects() {
+	objectsGradeSums := cs.GetObjectGradesSum()
 
 	for _, obj := range cs.Objects {
 		var total float32
+		var count int
 		fmt.Println("_________________________")
 		if len(obj.Name) < 8 {
 			fmt.Printf("%s\t \t | Mean\t|\n", obj.Name)
@@ -104,18 +96,20 @@ func (cs ControlSection) PrintMeanObjects() {
 			fmt.Printf("%s\t | Mean\t|\n", obj.Name)
 		}
 		fmt.Println("_________________________")
-		gradeMeans := cs.GetObjectGradeMeanById(obj.ID)
-		slice := make([]int, 0, len(gradeMeans))
-		for k := range gradeMeans {
-			slice = append(slice, k)
+		grades := make([]int, 0, len(objectsGradeSums[obj.ID]))
+		for grade := range objectsGradeSums[obj.ID] {
+			grades = append(grades, grade)
 		}
-		sort.Ints(slice)
-		for _, k := range slice {
-			fmt.Printf("%d grade \t | %.1f\t|\n", k, gradeMeans[k])
-			total += gradeMeans[k]
+		sort.Ints(grades)
+		for _, grade := range grades {
+			fmt.Printf("%d grade \t | %.1f\t|\n", grade, objectsGradeSums[obj.ID][grade].Mean)
+			total += float32(objectsGradeSums[obj.ID][grade].Sum)
+			count += objectsGradeSums[obj.ID][grade].Count
 		}
-		fmt.Println("_________________________")
-		fmt.Printf("mean \t\t | %d\t|\n", int(total)/len(slice))
-		fmt.Println("_________________________")
+		if count > 0 {
+			fmt.Println("_________________________")
+			fmt.Printf("mean \t\t | %3.f\t|\n", total/float32(count))
+			fmt.Println("_________________________")
+		}
 	}
 }

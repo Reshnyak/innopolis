@@ -13,7 +13,12 @@ func main() {
 	if err != nil {
 		log.Fatal(err)
 	}
-	defer jsonFile.Close()
+	defer func() {
+		err := jsonFile.Close()
+		if err != nil {
+			log.Println(err)
+		}
+	}()
 	fmt.Println("File descriptor successfully created")
 
 	var CS ControlSection
@@ -21,7 +26,9 @@ func main() {
 	if err != nil {
 		log.Fatal(err)
 	}
-	json.Unmarshal(byteValue, &CS)
+	err = json.Unmarshal(byteValue, &CS)
+	if err != nil {
+		log.Fatal(err)
+	}
 	CS.PrintMeanObjectsByFunctions()
-	//CS.PrintMeanObjects()
 }
