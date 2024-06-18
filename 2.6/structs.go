@@ -27,6 +27,18 @@ type ControlSection struct {
 	grades   []int
 }
 
+type MeanGrade struct {
+	Sum   int
+	Count int
+	Mean  float32
+}
+
+func (mg *MeanGrade) CalcMean() {
+	if mg.Count > 0 {
+		mg.Mean = float32(mg.Sum) / float32(mg.Count)
+	}
+}
+
 // Метод возвращающий мапу студентов с ID - key
 func (cs ControlSection) GetStudentsMap() map[int]Student {
 	res := make(map[int]Student)
@@ -47,20 +59,24 @@ func (cs ControlSection) GetObjectsMap() map[int]Object {
 
 // Метод возвращающий мапу средних результатов по предметам и грэйдам
 // Ключи первого уровня ObjectID,  второго грэйды
-func (cs ControlSection) GetObjectGradesMeanMap() map[int]map[int]float32 {
+func (cs ControlSection) GetObjectGradesSumByFuncs() map[int]map[int]MeanGrade {
 	studMap := cs.GetStudentsMap()
-	resMap := make(map[int]map[int]float32)
+	resMap := make(map[int]map[int]MeanGrade)
 	for _, obj := range cs.Objects {
-		resMap[obj.ID] = make(map[int]float32)
+		resMap[obj.ID] = make(map[int]MeanGrade)
 		for _, grade := range cs.GetSortGrades() {
 			resGreade := Filter(cs.Results, func(res Result) bool {
 				return res.ObjectID == obj.ID && studMap[res.StudentID].Grade == grade
 			})
-			sum := Reduce(resGreade, 0.0, func(res Result, b float32) float32 {
-				return float32(res.Result) + b
+			sum := Reduce(resGreade, 0.0, func(res Result, b int) int {
+				return res.Result + b
 			})
 			if len(resGreade) > 0 {
-				resMap[obj.ID][grade] = sum / float32(len(resGreade))
+				resMap[obj.ID][grade] = MeanGrade{
+					Sum:   sum,
+					Count: len(resGreade),
+					Mean:  float32(sum) / float32(len(resGreade)),
+				}
 			}
 		}
 	}
@@ -88,10 +104,11 @@ func (cs *ControlSection) GetSortGrades() []int {
 // GetMeanObjectGrade
 // Форматированный вывод сводных данных по предметам с использованием функций высшего порядка
 func (cs ControlSection) PrintMeanObjectsByFunctions() {
-	grades := cs.GetSortGrades()
-	objectsGradeMeans := cs.GetObjectGradesMeanMap()
+	objectsGradeSums := cs.GetObjectGradesSumByFuncs()
+
 	for _, obj := range cs.Objects {
 		var total float32
+		var count int
 		fmt.Println("_________________________")
 		if len(obj.Name) < 8 {
 			fmt.Printf("%s\t \t | Mean\t|\n", obj.Name)
@@ -99,13 +116,20 @@ func (cs ControlSection) PrintMeanObjectsByFunctions() {
 			fmt.Printf("%s\t | Mean\t|\n", obj.Name)
 		}
 		fmt.Println("_________________________")
-		for _, grade := range grades {
-			mean := objectsGradeMeans[obj.ID][grade]
-			fmt.Printf("%d grade \t | %.1f\t|\n", grade, mean)
-			total += mean
+		grades := make([]int, 0, len(objectsGradeSums[obj.ID]))
+		for grade := range objectsGradeSums[obj.ID] {
+			grades = append(grades, grade)
 		}
-		fmt.Println("_________________________")
-		fmt.Printf("mean \t\t | %d\t|\n", int(total)/len(grades))
-		fmt.Println("_________________________")
+		sort.Ints(grades)
+		for _, grade := range grades {
+			fmt.Printf("%d grade \t | %.1f\t|\n", grade, objectsGradeSums[obj.ID][grade].Mean)
+			total += float32(objectsGradeSums[obj.ID][grade].Sum)
+			count += objectsGradeSums[obj.ID][grade].Count
+		}
+		if count > 0 {
+			fmt.Println("_________________________")
+			fmt.Printf("mean \t\t | %3.f\t|\n", total/float32(count))
+			fmt.Println("_________________________")
+		}
 	}
 }

@@ -6,6 +6,11 @@ import (
 	"strconv"
 )
 
+const (
+	min_score = 1
+	max_score = 5
+)
+
 type Student struct {
 	ID    int    `json:"id"`
 	Name  string `json:"name"`
@@ -71,7 +76,7 @@ func (cs ControlSection) FindTopStudent() []Result {
 		})
 		if sum := Reduce(stud, 0, func(a Result, b int) int {
 			return a.Result + b
-		}); sum == len(stud)*5 {
+		}); sum == len(stud)*max_score {
 			return true
 		}
 		return false
