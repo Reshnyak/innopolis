@@ -22,5 +22,5 @@ func main() {
 		log.Fatal(err)
 	}
 	json.Unmarshal(byteValue, &CS)
-	CS.PrintControlSection()
+	CS.PrintResult(CS.Results)
 }

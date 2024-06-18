@@ -3,6 +3,7 @@ package main
 import (
 	"flag"
 	"fmt"
+	"log"
 )
 
 func main() {
@@ -13,7 +14,10 @@ func main() {
 
 	flag.Parse()
 
-	totalQuestions, correctAnswers := ProcessCSV(*filename, *isRand, *partSize)
+	totalQuestions, correctAnswers, err := ProcessCSV(*filename, *isRand, *partSize)
+	if err != nil {
+		log.Fatal(err)
+	}
 	incorrectAnswers := totalQuestions - correctAnswers
 
 	fmt.Printf("Correct answers: %d\t", correctAnswers)

@@ -1,16 +1,19 @@
 package main
 
 import (
+	"fmt"
+
 	"golang.org/x/exp/constraints"
 )
 
 type Number interface {
 	constraints.Integer | constraints.Float
 }
+
 type Numbers[T Number] []T
 
 // суммирование всех элементов
-func (num Numbers[T]) accumulate() T {
+func (num Numbers[T]) Accumulate() T {
 	var res T
 	for _, val := range num {
 		res += val
@@ -19,7 +22,7 @@ func (num Numbers[T]) accumulate() T {
 }
 
 // произведение всех элементов
-func (num Numbers[T]) product() T {
+func (num Numbers[T]) Product() T {
 	var res T
 	if len(num) > 0 {
 		res = num[0]
@@ -57,16 +60,21 @@ func (num Numbers[T]) FirstIndexOF(value T) (int, bool) {
 }
 
 // удаление элемента массива по значению
-func (num Numbers[T]) DeleteByValue(value T) Numbers[T] {
-	for ind, val := range num {
+func (num *Numbers[T]) DeleteByValue(value T) {
+	for ind, val := range *num {
 		if val == value {
-			return append(num[:ind], num[ind+1:]...)
+			*num = append((*num)[:ind], (*num)[ind+1:]...)
 		}
 	}
-	return num
 }
 
 // удаление элемента массива по индексу
-func (num Numbers[T]) DeleteByIndex(ind int) Numbers[T] {
-	return append(num[:ind], num[ind+1:]...)
+func (num *Numbers[T]) DeleteByIndex(ind int) {
+	*num = append((*num)[:ind], (*num)[ind+1:]...)
+}
+func main() {
+	slice := Numbers[int]{1, 2, 3, 4, 5, 6, 7, 8, 9, 0}
+	slice.DeleteByIndex(3)
+	slice.DeleteByValue(7)
+	fmt.Println(slice)
 }

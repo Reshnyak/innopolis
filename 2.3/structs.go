@@ -1,6 +1,9 @@
 package main
 
-import "fmt"
+import (
+	"fmt"
+	"strconv"
+)
 
 type Student struct {
 	ID    int    `json:"id"`
@@ -23,51 +26,47 @@ type ControlSection struct {
 	Results  []Result
 }
 
-// Метод возвращающий имя студента по его id
-func (cs ControlSection) GetStudentNameByID(id int) string {
-	for _, s := range cs.Students {
-		if s.ID == id {
-			return s.Name
-		}
+// Метод возвращающий мапу студентов с ID - key
+func (cs ControlSection) GetStudentsMap() map[int]Student {
+	res := make(map[int]Student)
+	for _, stud := range cs.Students {
+		res[stud.ID] = stud
 	}
-	return ""
+	return res
 }
 
-// Метод возвращающий grade студента по его id
-func (cs ControlSection) GetStudentGradeByID(id int) int {
-	for _, s := range cs.Students {
-		if s.ID == id {
-			return s.Grade
-		}
-	}
-	return 0
-}
-
-// Метод возвращающий наименование предмета по id
-func (cs ControlSection) GetObjectNameByID(id int) string {
+// Метод возвращающий мапу предметов с ID - key
+func (cs ControlSection) GetObjectsMap() map[int]Object {
+	res := make(map[int]Object)
 	for _, obj := range cs.Objects {
-		if obj.ID == id {
-			return obj.Name
-		}
+		res[obj.ID] = obj
 	}
-	return ""
+	return res
 }
 
-//Форматированный вывод =) ...надо попробовать повторить c template
-func (cs ControlSection) PrintControlSection() {
-	fmt.Println("___________________________________________________")
-	fmt.Printf("Student name \t| Grade\t| Object\t| Resulte |\n")
-	fmt.Println("___________________________________________________")
-	for _, r := range cs.Results {
-		fmt.Printf("%s \t\t| ", cs.GetStudentNameByID(r.StudentID))
-		fmt.Printf(" %d\t| ", cs.GetStudentGradeByID(r.StudentID))
-		objName := cs.GetObjectNameByID(r.ObjectID)
-		if len(objName) < 5 {
-			fmt.Printf(" %s\t\t| ", cs.GetObjectNameByID(r.ObjectID))
-		} else {
-			fmt.Printf(" %s\t| ", cs.GetObjectNameByID(r.ObjectID))
-		}
-		fmt.Printf(" %d\t  |\n", r.Result)
+// Форматированный вывод
+func (cs ControlSection) PrintResult(results []Result) {
+	StudMap := cs.GetStudentsMap()
+	ObjMap := cs.GetObjectsMap()
+	fmt.Println("________________________________________________________________")
+	FormatPrint(5, "Student name", "Grade", "Object", "Result")
+	fmt.Println("________________________________________________________________")
+	for _, res := range results {
+		name := StudMap[res.StudentID].Name
+		grade := strconv.Itoa(StudMap[res.StudentID].Grade)
+		object := ObjMap[res.ObjectID].Name
+		FormatPrint(7, name, grade, object, strconv.Itoa(res.Result))
 	}
-
+}
+func FormatPrint(constraint int, colums ...string) {
+	if len(colums) > 0 {
+		for _, colum := range colums {
+			if len(colum) < constraint {
+				fmt.Printf(" %s\t\t| ", colum)
+				continue
+			}
+			fmt.Printf(" %s\t| ", colum)
+		}
+		fmt.Println()
+	}
 }

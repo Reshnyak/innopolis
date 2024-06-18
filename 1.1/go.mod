@@ -1,3 +1,3 @@
-module github.com/Reshnyak/innopolis/1.1
+module innopolis/1.1
 
-go 1.21.3
+go 1.20
