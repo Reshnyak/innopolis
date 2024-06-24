@@ -10,14 +10,15 @@ var mu = sync.Mutex{}
 func RunProcessor(wg *sync.WaitGroup, prices []map[string]float64) {
 	go func() {
 		defer wg.Done()
+		mu.Lock()
 		for _, price := range prices {
-			mu.Lock()
+
 			for key, value := range price {
 				price[key] = value + 1
 			}
 			fmt.Println(price)
-			mu.Unlock()
 		}
+		mu.Unlock()
 	}()
 }
 
