@@ -1,11 +1,9 @@
----
-token_len:16
-worker_duration:1s
-worker_count:4
-file_path:/data
-files_count:8
-users_count:6
-message_max_count:4
-message_max_len:24
-storage_type:FS
----
+tokenlen: 16
+worker_duration: 1s
+worker_count: 4
+file_path: /data
+files_count: 8
+users_count: 6
+message_max_count: 4
+message_max_len: 24
+storage_type: FS

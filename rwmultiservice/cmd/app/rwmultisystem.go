@@ -3,13 +3,15 @@ package main
 import (
 	"context"
 	"fmt"
-	"github.com/Reshnyak/innopolis/rwmultiservice/configs"
-	"github.com/Reshnyak/innopolis/rwmultiservice/internal/models"
-	"github.com/Reshnyak/innopolis/rwmultiservice/middleware"
-	"github.com/Reshnyak/innopolis/rwmultiservice/storage"
 	"log"
 	"sync"
 	"time"
+
+	"github.com/Reshnyak/innopolis/rwmultiservice/configs"
+	"github.com/Reshnyak/innopolis/rwmultiservice/internal/models"
+	"github.com/Reshnyak/innopolis/rwmultiservice/internal/retry"
+	"github.com/Reshnyak/innopolis/rwmultiservice/middleware"
+	"github.com/Reshnyak/innopolis/rwmultiservice/storage"
 )
 
 type RWMultiSystem struct {
@@ -54,20 +56,24 @@ func fanInValidate(inputs []chan models.Message) <-chan models.Message {
 	}()
 	return out
 }
-func (rwms *RWMultiSystem) worker(inputs <-chan []models.Message) {
+func (rwms *RWMultiSystem) worker(wg *sync.WaitGroup, inputs <-chan []models.Message) {
 	go func() {
+		defer wg.Done()
+		retry := retry.NewRetrie(1*time.Second, 3)
 		for messages := range inputs {
 			for _, msg := range messages {
-				err := <-rwms.storage.WriteMsg(msg)
+				err := retry.Run(msg, rwms.storage.WriteMsg)
 				if err != nil {
-					log.Printf("worker: %s", err)
-					//retry
+					log.Printf("worker can not write message in file%s: %s", msg.FileId, err)
 				}
 			}
 		}
 	}()
 }
-func (rwms *RWMultiSystem) startWorkers() {
+func (rwms *RWMultiSystem) startWorkers() <-chan struct{} {
+	done := make(chan struct{})
+	defer close(done)
+	wg := new(sync.WaitGroup)
 	cacheChan := make(chan []models.Message)
 	go func() {
 		for _, fileName := range rwms.cache.GetKeys() {
@@ -78,13 +84,16 @@ func (rwms *RWMultiSystem) startWorkers() {
 		}
 		close(cacheChan)
 	}()
+
 	for w := 0; w < rwms.config.WorkersCount; w++ {
-		rwms.worker(cacheChan)
+		wg.Add(1)
+		rwms.worker(wg, cacheChan)
 	}
+	wg.Wait()
+	return done
 }
 func (rwms *RWMultiSystem) Process(ctx context.Context, inputs []chan models.Message) error {
 	ticker := time.NewTicker(rwms.config.WorkerDuration)
-	fmt.Printf("Chans count: %d\n", len(inputs))
 	//запустим проверку сообщений из входных каналов
 	go func() {
 		for msg := range fanInValidate(inputs) {
@@ -95,11 +104,14 @@ func (rwms *RWMultiSystem) Process(ctx context.Context, inputs []chan models.Mes
 	for {
 		select {
 		case <-ticker.C:
-			rwms.startWorkers()
+			go func() {
+				rwms.startWorkers()
+			}()
 			fmt.Printf("ticket len cache:%d\n", rwms.cache.Len())
 		case <-ctx.Done():
-			fmt.Printf("shutdown\n")
-			rwms.startWorkers()
+			fmt.Printf("shutdown:saving message from cache to files... changes for %d files are waiting to be written \n", rwms.cache.Len())
+			<-rwms.startWorkers()
+			fmt.Printf("shutdown:saved\n")
 			return nil
 		}
 	}

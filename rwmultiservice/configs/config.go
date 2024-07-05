@@ -3,12 +3,13 @@ package configs
 import (
 	"flag"
 	"fmt"
-	"github.com/joho/godotenv"
-	"gopkg.in/yaml.v2"
 	"os"
 	"strconv"
 	"strings"
 	"time"
+
+	"github.com/joho/godotenv"
+	"gopkg.in/yaml.v3"
 )
 
 var configPath = flag.String("config-path", "configs/cfg.yaml", "path to config file (.yaml or .env file)")
@@ -25,7 +26,7 @@ type Config struct {
 	StorageType     string        `yaml:"storage_type"`
 }
 
-func defaultInitialize() *Config {
+func DefaultInitialize() *Config {
 	return &Config{
 		TokenLen:        16,
 		WorkerDuration:  1 * time.Second,
@@ -49,7 +50,7 @@ func GetConfig(configPath string) (*Config, error) {
 	case "env":
 		return parseEnvCfg(configPath)
 	default:
-		return defaultInitialize(), fmt.Errorf("incorrect config path")
+		return DefaultInitialize(), fmt.Errorf("incorrect config path")
 	}
 }
 func ParseFlags() (*Config, error) {
@@ -62,11 +63,11 @@ func parseYamlCfg(configPath string) (*Config, error) {
 	config := &Config{}
 	yamlConf, err := os.ReadFile(configPath)
 	if err != nil {
-		return defaultInitialize(), fmt.Errorf("could not read config file:%s", err)
+		return DefaultInitialize(), fmt.Errorf("could not read config file:%s", err)
 	}
 	err = yaml.Unmarshal(yamlConf, config)
 	if err != nil {
-		return defaultInitialize(), fmt.Errorf("could not unmarshal config:%s", err)
+		return DefaultInitialize(), fmt.Errorf("could not unmarshal config:%s", err)
 	}
 	return config, nil
 }
@@ -104,7 +105,7 @@ func getEnvAsDuration(name string) (time.Duration, error) {
 
 func parseEnvCfg(configPath string) (*Config, error) {
 	config := &Config{}
-	cfg := defaultInitialize()
+	cfg := DefaultInitialize()
 	err := godotenv.Load(configPath)
 	if err != nil {
 		return cfg, fmt.Errorf("could not load config from .env:%s", err)

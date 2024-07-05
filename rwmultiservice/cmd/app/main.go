@@ -2,13 +2,14 @@ package main
 
 import (
 	"context"
-	"github.com/Reshnyak/innopolis/rwmultiservice/configs"
-	"github.com/Reshnyak/innopolis/rwmultiservice/setup"
 	"log"
 	"os"
 	"os/signal"
 	"runtime/trace"
 	"syscall"
+
+	"github.com/Reshnyak/innopolis/rwmultiservice/configs"
+	"github.com/Reshnyak/innopolis/rwmultiservice/setup"
 )
 
 func main() {
@@ -20,7 +21,7 @@ func main() {
 	defer stop()
 
 	// setup tracing
-	fileTrace, _ := os.Create("trace.out")
+	fileTrace, _ := os.Create(cfg.FilePath + "trace.out")
 	trace.Start(fileTrace)
 	defer trace.Stop()
 	//instace rwmultisystem
@@ -34,7 +35,6 @@ func main() {
 	if err != nil {
 		log.Fatal(err)
 	}
-
 	rwms.Process(ctx, inputChans)
 
 }

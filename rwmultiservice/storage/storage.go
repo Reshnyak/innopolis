@@ -4,12 +4,13 @@ import (
 	"database/sql"
 	"errors"
 	"fmt"
-	"github.com/Reshnyak/innopolis/rwmultiservice/configs"
-	"github.com/Reshnyak/innopolis/rwmultiservice/internal/models"
 	"log"
 	"os"
 	"sort"
 	"sync"
+
+	"github.com/Reshnyak/innopolis/rwmultiservice/configs"
+	"github.com/Reshnyak/innopolis/rwmultiservice/internal/models"
 )
 
 type Storage interface {
@@ -55,15 +56,21 @@ func (sfs StorageFS) WriteMsg(msg models.Message) <-chan error {
 		defer close(done)
 		mu.Lock()
 		defer mu.Unlock()
+
 		file, err := os.OpenFile("data/"+msg.FileId, os.O_APPEND|os.O_WRONLY, 0o600)
 		if err != nil {
 			done <- fmt.Errorf("WriteMsg(%s) os.Open: %s", msg.FileId, err)
+			return
 		}
+		defer func() {
+			done <- file.Close()
+		}()
 		_, err = file.WriteString(msg.Data)
 		if err != nil {
 			done <- fmt.Errorf("WriteMsg(%s) file.WriteString: %s", msg.FileId, err)
+			return
 		}
-		done <- file.Close()
+
 		log.Printf("write file is done:%s", msg.FileId)
 
 	}(sfs.mu)
