@@ -37,10 +37,8 @@ func New(c *configs.Config) (*RWMultiSystem, error) {
 func fanInValidate(inputs []<-chan models.Message) <-chan models.Message {
 	wg := new(sync.WaitGroup)
 	out := make(chan models.Message)
-	fmt.Printf("start fanin chaneles %v\n", len(inputs))
 	output := func(c <-chan models.Message) {
 		for msg := range c {
-			fmt.Printf("fanIn %s\n", msg)
 			if middleware.UserTokens.IsValid(msg.Token) {
 				out <- msg
 			}
@@ -49,7 +47,6 @@ func fanInValidate(inputs []<-chan models.Message) <-chan models.Message {
 	}
 	wg.Add(len(inputs))
 	for _, res := range inputs {
-		fmt.Printf("range fanin go output\n")
 		go output(res)
 	}
 	go func() {
@@ -100,7 +97,6 @@ func (rwms *RWMultiSystem) Process(ctx context.Context, inputs []<-chan models.M
 	//запустим проверку сообщений из входных каналов
 	go func() {
 		defer close(done)
-		fmt.Printf("start processing %d\n", len(inputs))
 		for msg := range fanInValidate(inputs) {
 			rwms.cache.Set(msg.FileId, msg)
 		}

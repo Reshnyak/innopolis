@@ -43,7 +43,7 @@ func (fl *FileRepo) SetupFiles() error {
 		if err != nil {
 			return fmt.Errorf("setupFiles(%s) close: %s", filename, err)
 		}
-		log.Printf("setupFiles(%s) created", filename)
+		log.Printf("setupFiles(%s) created", file.Name())
 	}
 	log.Printf("%d files created ", len(fl.Names))
 	return nil

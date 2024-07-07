@@ -1,6 +1,7 @@
-.PHONY: build
+all: build test
 
 build:
 	go build -v ./cmd/app/
+test:
+	go test -v -cover ./...
 
-.DEFAULT_GOAL:= build

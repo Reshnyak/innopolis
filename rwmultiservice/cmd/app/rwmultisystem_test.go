@@ -3,10 +3,11 @@ package main
 import (
 	"context"
 	"fmt"
-	"github.com/Reshnyak/innopolis/rwmultiservice/setup"
 	"os"
 	"strings"
 	"testing"
+
+	"github.com/Reshnyak/innopolis/rwmultiservice/setup"
 
 	"github.com/Reshnyak/innopolis/rwmultiservice/configs"
 	"github.com/Reshnyak/innopolis/rwmultiservice/internal/models"
@@ -25,7 +26,6 @@ func ProcessTestCase(userChanCount int, cfg *configs.Config, files []string, mes
 		cache:   storage.NewCache(),
 	}
 	//coздадим файлы
-	fmt.Printf("Create test files: %v\n", files)
 	err := rwms.storage.File().CreateNewFiles(files...)
 	if err != nil {
 		return fmt.Errorf("processTestCase: CreateNewFiles  %s", err)
@@ -43,8 +43,9 @@ func ProcessTestCase(userChanCount int, cfg *configs.Config, files []string, mes
 		}()
 		return out
 	}
+	sendChan := sendFunc(messages)
 	for i := 0; i < userChanCount; i++ {
-		inputMsgChans[i] = setup.FanOut(sendFunc(messages))
+		inputMsgChans[i] = setup.FanOut(sendChan)
 	}
 
 	return rwms.Process(ctx, inputMsgChans)
@@ -57,7 +58,6 @@ func ProcessTestCase(userChanCount int, cfg *configs.Config, files []string, mes
 // 4. Воркер записывает сообщение в целевой файл.
 // 5. Кеш очищается для этого файла.
 func TestRWSystemCase1(t *testing.T) {
-	fmt.Println("start TestRWSystemCase1")
 	cfg := configs.DefaultInitialize()
 	cfg.FilePath = ""
 	cfg.FilesCount = 1
@@ -235,3 +235,10 @@ func TestRWSystemCase5(t *testing.T) {
 		_ = os.Remove(file)
 	}
 }
+
+//### Cценарий 6: Сбор работы воркера
+//1. Если воркер сталкивается с ошибкой при записи данных в файл (недоступность файла, отказ диска, etc), система должна предпринять меры по обработке этой ситуации.
+//2. Ретраи, получается
+// Тестировал следующим образом:
+// Запускал приложение и в терминале менял путь к файлам mv data data2
+// Появлялось сообщение о повторе. Возвращал в терминале верный путь

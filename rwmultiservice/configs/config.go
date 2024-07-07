@@ -31,7 +31,7 @@ func DefaultInitialize() *Config {
 		TokenLen:        16,
 		WorkerDuration:  1 * time.Second,
 		WorkersCount:    4,
-		FilePath:        "/data",
+		FilePath:        "data/",
 		FilesCount:      4,
 		UsersCount:      3,
 		MessageMaxCount: 40,
