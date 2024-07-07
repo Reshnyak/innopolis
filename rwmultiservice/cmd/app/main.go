@@ -22,7 +22,7 @@ func main() {
 
 	// setup tracing
 	fileTrace, _ := os.Create(cfg.FilePath + "trace.out")
-	trace.Start(fileTrace)
+	_ = trace.Start(fileTrace)
 	defer trace.Stop()
 	//instace rwmultisystem
 	rwms, err := New(cfg)
@@ -30,11 +30,26 @@ func main() {
 		log.Fatalf("Could not initialize service: %s", err)
 	}
 	// Будем считать что пользователи отправляют обновления в существующие файлы.
-	// Создание будем обрабатывать отдельно, и тогда создавать новые файлы
+	// Создание будем обрабатывать отдельно... когда-нибудь
+
+	//сгенерируем файлы
+	err = rwms.storage.File().SetupFiles()
+	if err != nil {
+		log.Fatalf("Could not generete files: %s", err)
+	}
+	//сгенерируем пользователей
+	err = rwms.storage.User().SetupUsers(cfg)
+	if err != nil {
+		log.Fatalf("Could not generete users: %s", err)
+	}
+	// имитация отправки пользователями сообщений в каналы для обработки и записи
 	inputChans, err := setup.SetupProcess(rwms.storage.GetAllUsers())
 	if err != nil {
 		log.Fatal(err)
 	}
-	rwms.Process(ctx, inputChans)
+	err = rwms.Process(ctx, inputChans)
+	if err != nil {
+		log.Printf("Could not generete users: %s", err)
+	}
 
 }

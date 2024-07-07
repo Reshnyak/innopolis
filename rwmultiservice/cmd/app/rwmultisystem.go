@@ -34,12 +34,13 @@ func New(c *configs.Config) (*RWMultiSystem, error) {
 
 // fanInValidate - проверяет сообщения из входных каналов на соответствие токену
 // в дальнейшем можно проверить и на существование файла с таким именем
-func fanInValidate(inputs []chan models.Message) <-chan models.Message {
-	log.Printf("fanInValidate len inputs:%d", len(inputs))
+func fanInValidate(inputs []<-chan models.Message) <-chan models.Message {
 	wg := new(sync.WaitGroup)
 	out := make(chan models.Message)
+	fmt.Printf("start fanin chaneles %v\n", len(inputs))
 	output := func(c <-chan models.Message) {
 		for msg := range c {
+			fmt.Printf("fanIn %s\n", msg)
 			if middleware.UserTokens.IsValid(msg.Token) {
 				out <- msg
 			}
@@ -48,6 +49,7 @@ func fanInValidate(inputs []chan models.Message) <-chan models.Message {
 	}
 	wg.Add(len(inputs))
 	for _, res := range inputs {
+		fmt.Printf("range fanin go output\n")
 		go output(res)
 	}
 	go func() {
@@ -92,10 +94,13 @@ func (rwms *RWMultiSystem) startWorkers() <-chan struct{} {
 	wg.Wait()
 	return done
 }
-func (rwms *RWMultiSystem) Process(ctx context.Context, inputs []chan models.Message) error {
+func (rwms *RWMultiSystem) Process(ctx context.Context, inputs []<-chan models.Message) error {
 	ticker := time.NewTicker(rwms.config.WorkerDuration)
+	done := make(chan struct{})
 	//запустим проверку сообщений из входных каналов
 	go func() {
+		defer close(done)
+		fmt.Printf("start processing %d\n", len(inputs))
 		for msg := range fanInValidate(inputs) {
 			rwms.cache.Set(msg.FileId, msg)
 		}
@@ -108,8 +113,11 @@ func (rwms *RWMultiSystem) Process(ctx context.Context, inputs []chan models.Mes
 				rwms.startWorkers()
 			}()
 			fmt.Printf("ticket len cache:%d\n", rwms.cache.Len())
+		case <-done:
+			<-rwms.startWorkers()
+			return nil
 		case <-ctx.Done():
-			fmt.Printf("shutdown:saving message from cache to files... changes for %d files are waiting to be written \n", rwms.cache.Len())
+			fmt.Printf("shutdown:saving messages from cache to files... changes for %d files are waiting to be written \n", rwms.cache.Len())
 			<-rwms.startWorkers()
 			fmt.Printf("shutdown:saved\n")
 			return nil

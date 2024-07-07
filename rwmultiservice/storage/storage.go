@@ -13,30 +13,26 @@ import (
 	"github.com/Reshnyak/innopolis/rwmultiservice/internal/models"
 )
 
-type Storage interface {
+type UserReposytory interface {
+	RegisterNewUser(users ...models.User)
+	GetAllUsers() []models.User
+	User() *models.Users
+}
+type FileReposytory interface {
 	WriteMsg(msg models.Message) <-chan error
 	GetAllFiles() ([]string, error)
-	RegisterNewUser() (string, error)
-	GetAllUsers() []models.User
+	File() *models.FileRepo
+}
+
+type Storage interface {
+	FileReposytory
+	UserReposytory
 }
 
 func NewStorage(config *configs.Config) (Storage, error) {
 	switch config.StorageType {
 	case "FS":
-		fl, err := models.NewFileNames(config)
-		if err != nil {
-			return nil, err
-		}
-		users, err := models.SetupUsers(fl, config)
-		if err != nil {
-			return nil, err
-		}
-		return &StorageFS{
-			files: fl,
-			path:  config.FilePath,
-			users: users,
-			mu:    new(sync.Mutex),
-		}, nil
+		return NewStorageFS(config), nil
 	case "DB":
 		return nil, errors.New("we apologize that the storageDb is not implemented now. we are working on it")
 	}
@@ -47,17 +43,30 @@ type StorageFS struct {
 	mu    *sync.Mutex
 	path  string
 	files *models.FileRepo
-	users []models.User
+	users *models.Users
 }
 
+func NewStorageFS(config *configs.Config) *StorageFS {
+	return &StorageFS{
+		files: models.NewFileNames(config),
+		path:  config.FilePath,
+		users: models.NewUsers(),
+		mu:    new(sync.Mutex),
+	}
+}
+func (sfs StorageFS) File() *models.FileRepo {
+	return sfs.files
+}
+func (sfs StorageFS) User() *models.Users {
+	return sfs.users
+}
 func (sfs StorageFS) WriteMsg(msg models.Message) <-chan error {
 	done := make(chan error)
 	go func(mu *sync.Mutex) {
 		defer close(done)
 		mu.Lock()
 		defer mu.Unlock()
-
-		file, err := os.OpenFile("data/"+msg.FileId, os.O_APPEND|os.O_WRONLY, 0o600)
+		file, err := os.OpenFile(sfs.path+msg.FileId, os.O_APPEND|os.O_WRONLY, 0o600)
 		if err != nil {
 			done <- fmt.Errorf("WriteMsg(%s) os.Open: %s", msg.FileId, err)
 			return
@@ -80,7 +89,7 @@ func (sfs StorageFS) WriteMsg(msg models.Message) <-chan error {
 func (sfs *StorageFS) GetAllFiles() ([]string, error) {
 
 	files := make([]string, 0, len(sfs.files.Names))
-	//На данном этапе не требуется Lock, но если добавим POST на добавление нового файла
+	//На данном этапе не требуется Lock, но если добавим добавление новых файлов
 	sfs.mu.Lock()
 	for f := range sfs.files.Names {
 		files = append(files, f)
@@ -89,19 +98,22 @@ func (sfs *StorageFS) GetAllFiles() ([]string, error) {
 	sort.Strings(files)
 	return files, nil
 }
-func (sfs *StorageFS) RegisterNewUser() (string, error) {
+func (sfs *StorageFS) RegisterNewUser(users ...models.User) {
+	sfs.mu.Lock()
+	defer sfs.mu.Unlock()
+	*sfs.users = append(*sfs.users, users...)
 
-	return "", nil
 }
 
 func (sfs *StorageFS) GetAllUsers() []models.User {
-
+	sfs.mu.Lock()
+	defer sfs.mu.Unlock()
 	countMessage := 0
-	for _, usr := range sfs.users {
+	for _, usr := range *sfs.users {
 		countMessage += len(usr.Messages)
 	}
-	log.Printf("Users count:%d Message count:%d\n", len(sfs.users), countMessage)
-	return sfs.users
+	log.Printf("Users count:%d Message count:%d\n", len(*sfs.users), countMessage)
+	return *sfs.users
 }
 
 // ////////////////////////////////////////////////////////
@@ -109,7 +121,6 @@ type ConfigDb struct {
 }
 type StorageDB struct {
 	config *ConfigDb
-	cache  *CacheMsg
 	DB     *sql.DB
 }
 

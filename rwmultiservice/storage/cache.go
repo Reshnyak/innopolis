@@ -1,9 +1,9 @@
 package storage
 
 import (
-	"github.com/Reshnyak/innopolis/rwmultiservice/internal/models"
 	"log"
 	"sync"
+	"github.com/Reshnyak/innopolis/rwmultiservice/internal/models"
 )
 
 type CacheMsg struct {
@@ -25,8 +25,8 @@ func (c *CacheMsg) Len() int {
 
 }
 func (c *CacheMsg) GetKeys() []string {
-	c.mu.RLock()
-	defer c.mu.RUnlock()
+	c.mu.Lock()
+	defer c.mu.Unlock()
 	keys := make([]string, 0, len(c.m))
 	for key, _ := range c.m {
 		keys = append(keys, key)
