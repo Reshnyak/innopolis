@@ -13,5 +13,5 @@ func main() {
 		},
 	}
 
-	fmt.Printf("%v\n", mtx.BFS(0))
+	fmt.Printf("%v\n", mtx.BFS(4))
 }

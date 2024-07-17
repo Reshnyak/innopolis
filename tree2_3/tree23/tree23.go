@@ -11,6 +11,7 @@ type Node struct {
 	nodes []*Node
 }
 
+// Печатаем дерево
 func (n *Node) PrintTree() {
 	if nil == n {
 		return
@@ -39,12 +40,16 @@ func (n *Node) PrintTree() {
 		queue = queue[1:]
 	}
 }
+
+// Создаем новый узел и вносим ключ
 func NewNode(key int) *Node {
 	return &Node{
 		keys:  []int{key},
 		nodes: make([]*Node, 5),
 	}
 }
+
+// Вставка ключей
 func (n *Node) Insert(keys ...int) {
 	for _, key := range keys {
 		if n == nil {
@@ -67,6 +72,8 @@ func (n *Node) Insert(keys ...int) {
 		n = p.split()
 	}
 }
+
+// Поиск узла с заданным ключом
 func (n *Node) Search(key int) *Node {
 	if nil == n {
 		return nil
@@ -82,6 +89,8 @@ func (n *Node) Search(key int) *Node {
 		return n.third().Search(key)
 	}
 }
+
+// Удаление ключей
 func (n *Node) Remove(keys ...int) {
 	for _, key := range keys {
 		node := n.Search(key)
