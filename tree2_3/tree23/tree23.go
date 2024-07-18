@@ -111,27 +111,30 @@ func (n *Node) Remove(keys ...int) {
 			}
 		}
 		node.removeFromNode(key)
-		n = node.fix()
+		*n = *fix(node)
+
 	}
 }
-func (n *Node) fix() *Node {
+func fix(n *Node) *Node {
 	if len(n.keys) == 0 && n.parent() == nil {
 		n = nil
 		return n
 	}
 	if len(n.keys) != 0 {
 		if n.parent() != nil {
-			return n.parent().fix()
+			return fix(n.parent())
 		}
 		return n
 	}
 	parent := n.parent()
-	if len(parent.first().keys) == 2 || len(parent.keys) == 2 || len(parent.second().keys) == 2 || (len(parent.keys) == 2 && len(parent.third().keys) == 2) {
+	if len(parent.first().keys) == 2 || len(parent.keys) == 2 || len(parent.second().keys) == 2 {
+		n.redistribute()
+	} else if len(parent.keys) == 2 && len(parent.third().keys) == 2 {
 		n.redistribute()
 	} else {
-		n.merge()
+		n = merge(n)
 	}
-	return n.fix()
+	return fix(n)
 
 }
 func (n *Node) redistribute() {
@@ -317,9 +320,9 @@ func (n *Node) redistribute() {
 			}
 		}
 	}
-	n = parent
+	*n = *parent
 }
-func (n *Node) merge() {
+func merge(n *Node) *Node {
 	parent := n.parent()
 
 	if parent.first() == n {
@@ -363,9 +366,9 @@ func (n *Node) merge() {
 			tmp = parent.second()
 		}
 		tmp.addParent(nil)
-		*n = *tmp
+		return tmp
 	}
-	*n = *parent
+	return parent
 }
 func (n *Node) findMinNode() *Node {
 	if nil == n {
