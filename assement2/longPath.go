@@ -1,7 +1,5 @@
 package main
 
-import "slices"
-
 type GraphMtx2 struct {
 	adjMatrix [][]int
 }
@@ -24,11 +22,12 @@ func (g *GraphMtx2) DFSUtil(vertex int, visited []bool, grade int) int {
 	maxGrade := grade
 	for i := 0; i < len(g.adjMatrix); i++ {
 		if !visited[i] && g.adjMatrix[vertex][i] != 0 {
-			g := g.DFSUtil(i, slices.Clone(visited), grade+g.adjMatrix[vertex][i])
+			g := g.DFSUtil(i, visited, grade+g.adjMatrix[vertex][i])
 			if g > maxGrade {
 				maxGrade = g
 			}
 		}
 	}
+	visited[vertex] = false
 	return maxGrade
 }
