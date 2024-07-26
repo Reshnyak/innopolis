@@ -4,9 +4,9 @@ import (
 	"fmt"
 	"io"
 	"log"
+	"mime"
 	"net/http"
 	"os"
-	"strings"
 	"sync"
 	"time"
 )
@@ -17,8 +17,8 @@ type Site struct {
 
 const (
 	maxWorkers    int           = 3
-	timeoutRes    time.Duration = 1000 * time.Millisecond //ожидание результата
-	timeoutClient time.Duration = 200 * time.Millisecond  //ожидание ответа на запрос от http.Client
+	timeoutRes    time.Duration = 100000 * time.Millisecond //ожидание результата
+	timeoutClient time.Duration = 200 * time.Millisecond    //ожидание ответа на запрос от http.Client
 )
 
 var once sync.Once
@@ -95,32 +95,33 @@ func worker(wg *sync.WaitGroup, id int, jobs <-chan Site, results chan<- Result)
 // Делаем запрос, получаем ответ и копируем в созданный файл
 // Возвращаем результат. В случая возникновения ошибки кладем её в результат
 func process(site *Site) *Result {
-	client := http.Client{Timeout: timeoutClient}
+	client := http.Client{}
+
 	resp, err := client.Get(site.url)
 	if err != nil {
-		return NewResult(site.url).AddError(fmt.Errorf("process client.Get:%s", err))
+		return NewResult().AddUrl(site.url).AddError(fmt.Errorf("process client.Get:%s", err))
 	}
 	defer resp.Body.Close()
-	fileName := parseName(site.url)
+
+	_, params, err := mime.ParseMediaType(resp.Header.Get("Content-Disposition"))
+	if err != nil {
+		return NewResult().AddUrl(site.url).AddError(fmt.Errorf("ParseMediaType client.Get:%s", err))
+	}
+	fileName := params["filename"]
+
 	file, err := os.Create(fileName)
 	if err != nil {
-		return NewResult(site.url).AddError(fmt.Errorf("process os.Create:%s", err))
+		return NewResult().AddUrl(site.url).AddError(fmt.Errorf("process os.Create:%s", err))
 	}
 	_, err = io.Copy(file, resp.Body)
 	if err != nil {
-		return NewResult(site.url).AddError(fmt.Errorf("process io.Copy:%s", err))
+		return NewResult().AddUrl(site.url).AddError(fmt.Errorf("process io.Copy:%s", err))
 	}
 	err = file.Close()
 	if err != nil {
-		NewResult(site.url).AddError(fmt.Errorf("process file.Close:%s", err))
+		NewResult().AddUrl(site.url).AddError(fmt.Errorf("process file.Close:%s", err))
 	}
-	return NewResult(site.url, fileName).AddStatus(resp.StatusCode)
-}
-
-func parseName(s string) string {
-	slash := strings.LastIndex(s, "/")
-	s = s[slash+1:]
-	return s
+	return NewResult().AddUrl(site.url).AddFileName(fileName).AddStatus(resp.StatusCode)
 }
 
 // fanIn - объединяет результаты из каналов воркеров в один канал
