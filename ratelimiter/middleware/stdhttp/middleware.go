@@ -1,9 +1,10 @@
 package stdhttp
 
 import (
-	"github.com/Reshnyak/innopolis/ratelimiter/limiter"
+	"net"
 	"net/http"
-	"strings"
+
+	"github.com/Reshnyak/innopolis/ratelimiter/limiter"
 )
 
 type Middleware struct {
@@ -20,8 +21,11 @@ func NewStdHttpMiddleware(limiter *limiter.Limiter) *Middleware {
 // Handler handles a HTTP request.
 func (mid *Middleware) Handler(h http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		ind := strings.LastIndex(r.RemoteAddr, ":")
-		key := r.RemoteAddr[:ind]
+		key, _, err := net.SplitHostPort(r.RemoteAddr)
+		if err != nil {
+			w.WriteHeader(http.StatusInternalServerError)
+			return
+		}
 		mid.Limiter.LimitLock(key)
 		h.ServeHTTP(w, r)
 		mid.Limiter.LimitUnLock(key)

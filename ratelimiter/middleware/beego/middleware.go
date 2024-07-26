@@ -1,8 +1,8 @@
 package beego
 
 import (
+	"net"
 	"net/http"
-	"strings"
 
 	"github.com/Reshnyak/innopolis/ratelimiter/limiter"
 )
@@ -22,8 +22,11 @@ func NewBeeMiddleware(limiter *limiter.Limiter) *Middleware {
 }
 func (middleware *Middleware) Handler(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		ind := strings.LastIndex(r.RemoteAddr, ":")
-		key := r.RemoteAddr[:ind]
+		key, _, err := net.SplitHostPort(r.RemoteAddr)
+		if err != nil {
+			w.WriteHeader(http.StatusInternalServerError)
+			return
+		}
 		middleware.Limiter.LimitLock(key)
 		next.ServeHTTP(w, r)
 		middleware.Limiter.LimitUnLock(key)
