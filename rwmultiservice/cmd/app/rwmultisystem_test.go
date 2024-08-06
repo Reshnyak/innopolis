@@ -58,7 +58,7 @@ func ProcessTestCase(userChanCount int, cfg *configs.Config, files []string, mes
 // 4. Воркер записывает сообщение в целевой файл.
 // 5. Кеш очищается для этого файла.
 func TestRWSystemCase1(t *testing.T) {
-	cfg := configs.DefaultInitialize()
+	cfg, _ := configs.GetConfig("default")
 	cfg.FilePath = ""
 	cfg.FilesCount = 1
 	cfg.WorkersCount = 1
@@ -93,7 +93,7 @@ func TestRWSystemCase1(t *testing.T) {
 // 2. Сообщение проверяется на валидность токена.
 // 3. Сообщение не кешируется и отбрасывается.
 func TestRWSystemCase2(t *testing.T) {
-	cfg := configs.DefaultInitialize()
+	cfg, _ := configs.GetConfig("default")
 	cfg.FilePath = ""
 	cfg.FilesCount = 1
 	cfg.WorkersCount = 1
@@ -134,7 +134,7 @@ func TestRWSystemCase2(t *testing.T) {
 // 3. Воркер масштабируется
 // Большую нагрузку можно получить запустив приложение с конфигом в котором большое количество сообщений и файлов
 func TestRWSystemCase4(t *testing.T) {
-	cfg := configs.DefaultInitialize()
+	cfg, _ := configs.GetConfig("default")
 	cfg.FilePath = ""
 	cfg.FilesCount = 4
 	cfg.WorkersCount = 4
@@ -188,7 +188,7 @@ func TestRWSystemCase4(t *testing.T) {
 // 2. Синхронизация, чтобы избежать конфликтов и потери данных.
 func TestRWSystemCase5(t *testing.T) {
 
-	cfg := configs.DefaultInitialize()
+	cfg, _ := configs.GetConfig("default")
 	cfg.FilePath = ""
 	cfg.FilesCount = 4
 	cfg.WorkersCount = 4

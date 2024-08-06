@@ -3,8 +3,10 @@ package models
 import (
 	"fmt"
 	"math/rand"
+
 	"github.com/Reshnyak/innopolis/rwmultiservice/configs"
 	"github.com/Reshnyak/innopolis/rwmultiservice/middleware"
+	"github.com/Reshnyak/innopolis/rwmultiservice/utils"
 )
 
 type Users []User
@@ -13,8 +15,6 @@ type User struct {
 	UserToken string
 	Messages  []Message
 }
-
-var text = []byte("1234567890     ABCDEFGHIKLMNOPQRSTVXYZ")
 
 func NewUsers() *Users {
 	return &Users{}
@@ -45,17 +45,10 @@ func setupMessages(token string, config *configs.Config) ([]Message, error) {
 	currentCount := 1 + rand.Int()%(config.MessageMaxCount-1)
 	messages := make([]Message, currentCount)
 	for i := 0; i < len(messages); i++ {
-
-		data := make([]byte, 1+rand.Int()%(config.MessageMaxLen-1))
-		rand.Shuffle(len(text), func(i, j int) {
-			text[i], text[j] = text[j], text[i]
-		})
-		copy(data, text)
-		data = append(data, []byte("\n")...)
 		messages[i] = Message{
 			Token:  token,
 			FileId: fmt.Sprintf("file%d.txt", 1+rand.Int()%(config.FilesCount-1)),
-			Data:   string(data),
+			Data:   utils.GetRandomString(config.MessageMaxLen),
 		}
 	}
 	return messages, nil
